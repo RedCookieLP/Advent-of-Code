@@ -2,8 +2,8 @@
 #include <fstream>
 #include <vector>
 
-#define STRAT(x) ((x) == -1 ? "Lose" : ((x) == 0 ? "Draw" : "Win"))
-#define UNIT(x) ((x) == 0 ? "Rock" : ((x) == 1 ? "Paper" : "Scissors"))
+#define STRAT(x) ((x) == -1 ? "Lose" : ((x) == 0 ? "Draw" : ((x) == 1 ? "Win" : "Unknown...")))
+#define UNIT(x) ((x) == 0 ? "Rock" : ((x) == 1 ? "Paper" : ((x) == 2 ? "Scissors" : "Unknown...")))
 
 long evaluateRound2(char o, char r)
 {
@@ -14,10 +14,9 @@ long evaluateRound2(char o, char r)
 	o = (o == 0 ? 3 : o);
 
 	char own = (o + offset)%3;
+	score += (own+1);
 
-	std::cout << "Round - Supposed to: " << STRAT(r) << " | Opponent plays: " << UNIT(oldOpponent) << "\n\tYou play: " << UNIT(own) << '\n';
-
-	score += own;
+	std::cout << "Round - Supposed to: " << STRAT(offset) << " | Opponent plays: " << UNIT(oldOpponent) << "\n\tYou play: " << UNIT(own) << " ==> Results in Score of: " << score << '\n';
 
 	return score;
 }
