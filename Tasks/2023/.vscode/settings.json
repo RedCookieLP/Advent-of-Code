@@ -1,0 +1,10 @@
+{
+	"files.associations": {
+		"*.shdpck": "glsl",
+		"*.S": "avr",
+		"vector": "cpp",
+		"format": "cpp",
+		"xstring": "cpp",
+		"ostream": "cpp"
+	}
+}
