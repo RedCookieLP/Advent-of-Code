@@ -1,4 +1,7 @@
+#include <iostream>
 #include <string>
+
+#define UNUSED		__attribute__((unused))
 
 /** @name handleLine
  * 	@brief parser-function called for every line of the input file

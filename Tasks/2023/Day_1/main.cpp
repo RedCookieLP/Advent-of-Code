@@ -1,4 +1,3 @@
-#include <iostream>
 #include <vector>
 
 #include <AoC-Module.h>
@@ -18,7 +17,7 @@ const static std::string sc_numberStrings[] =
     "nine"
 };
 constexpr static size_t sc_numberStringsSize = sizeof(sc_numberStrings)/sizeof(sc_numberStrings[0]);
-#endif
+#endif // ~DO_PART_1
 
 bool handleLine(const std::string& line)
 {
@@ -29,7 +28,7 @@ bool handleLine(const std::string& line)
         if (isdigit(c))
             nums.push_back((uint32_t)(c - '0'));
     }
-    #else
+    #else // DO_PART_1
     for (uint32_t idx = 0 ; idx < line.length() ; idx++)
     {
         char c = line[idx];
@@ -42,29 +41,16 @@ bool handleLine(const std::string& line)
             {
                 if (line.find(*numStr, idx) == idx)
                 {
-                    //	std::cout << "Found \"" << *numStr << "\" at idx " << idx << "!\n   " << line << "\n   ";
-                    //	for (uint32_t y = 0 ; y < idx ; y++)
-                    //	    std::cout << ' ';
-                    //	for (uint32_t y = 0 ; y < numStr->length() ; y++)
-                    //	    std::cout << '~';
-                    //	std::cout << std::endl;
                     nums.push_back(i+1);
-                    //  idx += numStr->length()-1;
                     break;
                 }
             }
         }
     }
-    #endif
+    #endif // ~DO_PART_1
     if (nums.size() == 0)
         return true;
     
-    //	std::cout << "All stored numbers for this line (\"" << line << "\") are:" << std::endl;
-    //	for (const auto& n : nums)
-    //	{
-    //	    std::cout << "\t- " << n << std::endl;
-    //	}
-
     digitSum += (nums[0] * 10) + nums[nums.size()-1];
     return true;
 }

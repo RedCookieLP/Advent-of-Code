@@ -12,7 +12,15 @@ int main(int argc, const char** argv)
     std::string line;
     std::string filePath;
     if (argc > 1)
-        filePath = argv[1];
+	{
+		const std::string relPrefix("rel:");
+		std::string rawPath = argv[1];
+
+		// If the specified path starts with "rel:", treat the path as a path relative to the executables path
+		if (rawPath.substr(0, relPrefix.length()) == relPrefix)
+			filePath = exeDir;
+		filePath += rawPath.substr(relPrefix.length());
+	}
     else
         filePath = exeDir + "input.txt";
     std::ifstream file(filePath);
