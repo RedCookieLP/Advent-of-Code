@@ -1,7 +1,9 @@
 #include <iostream>
 #include <string>
 
-#define UNUSED		__attribute__((unused))
+// Why are they different? IDFK
+#define UNUSED			__attribute__((unused))
+#define MAYBE_UNUSED	[[maybe_unused]]
 
 /** @name handleLine
  * 	@brief parser-function called for every line of the input file
