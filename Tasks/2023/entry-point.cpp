@@ -35,6 +35,7 @@ int main(int argc, const char** argv)
         std::getline(file, line);
     	if (!handleLine(line))
         {
+			std::cout << " --- Early break! ---" << std::endl;
             earlyBreak = true;
             break;
         }
