@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 
 #include <AoC-Module.h>
 
@@ -9,7 +10,7 @@ void __attribute__((weak)) initialize([[maybe_unused]] uint64_t lineCount) {}
 int main(int argc, const char** argv)
 {
 	std::string exeDir = argv[0];
-	size_t lastSlashPos = exeDir.find_last_of('\\');
+	size_t lastSlashPos = exeDir.find_last_of("\\/");
 	exeDir = exeDir.substr(0, (lastSlashPos != std::string::npos ? lastSlashPos + 1 : lastSlashPos));
 	
     std::string line;
@@ -28,6 +29,8 @@ int main(int argc, const char** argv)
 	{
         filePath = exeDir + "input.txt";
 	}
+
+	std::cout << "Using file \"" << filePath << "\"!" << std::endl;
     std::ifstream file(filePath);
 	if (!file)
 	{
