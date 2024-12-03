@@ -32,3 +32,4 @@ target_compile_definitions(
 # Add all the subdirectories as targets
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Day1)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Day2)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Day3)

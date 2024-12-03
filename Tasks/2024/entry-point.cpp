@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <filesystem>
 
 #include <AoC-Module.h>
 
@@ -22,12 +23,15 @@ int main(int argc, const char** argv)
 
 		// If the specified path starts with "rel:", treat the path as a path relative to the executables path
 		if (rawPath.substr(0, relPrefix.length()) == relPrefix)
+		{
 			filePath = exeDir;
-		filePath += rawPath.substr(relPrefix.length());
+			rawPath = rawPath.substr(relPrefix.length());
+		}
+		filePath += rawPath;
 	}
     else
 	{
-        filePath = exeDir + "input.txt";
+        filePath = "input.txt";
 	}
 
 	std::cout << "Using file \"" << filePath << "\"!" << std::endl;
