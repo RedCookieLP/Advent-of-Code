@@ -28,8 +28,10 @@ target_compile_definitions(
 		$<$<CONFIG:Debug>:DEBUG>
 		$<$<CONFIG:Release>:NDEBUG>
 )
+target_compile_options(puzzleBase INTERFACE -Wall -Wextra)
 
 # Add all the subdirectories as targets
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Day1)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Day2)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Day3)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Day4)
