@@ -2,13 +2,16 @@
 #include <vector>
 #include <unordered_map>
 #include <regex>
+#include <sstream>
 
 template <typename IntType>
 inline static IntType strToInt(const std::string& str)
 {
 	static_assert(std::is_integral_v<IntType>, "IntType must be an integer type!");
 	IntType retVal;
-	(std::stringstream{} << str >> retVal);
+	std::stringstream ss;
+	ss << str;
+	ss >> retVal;
 	return retVal;
 }
 
@@ -33,7 +36,7 @@ public:
 		}
 		else if (page == m_pageB)
 		{
-			m_bIsPresent = page;
+			m_bIsPresent = true;
 		}
 		return true;
 	}
@@ -43,11 +46,11 @@ public:
 		m_bIsPresent = false;
 	}
 #ifndef PART_1
-	void fix(std::vector<uint32_t>& pageOrder) const
+	void fix(std::vector<uint32_t>& pageOrder, uint32_t offset = 0u) const
 	{
 		// First find a and b (there should only be one of each)
-		auto aIter = std::find_if(pageOrder.begin(), pageOrder.end(), [&](uint32_t pageNum){ return pageNum == m_pageA; });
-		auto bIter = std::find_if(pageOrder.begin(), pageOrder.end(), [&](uint32_t pageNum){ return pageNum == m_pageB; });
+		auto aIter = std::find_if(pageOrder.begin() + offset, pageOrder.end(), [&](uint32_t pageNum){ return pageNum == m_pageA; });
+		auto bIter = std::find_if(pageOrder.begin() + offset, pageOrder.end(), [&](uint32_t pageNum){ return pageNum == m_pageB; });
 
 		// Then check if we've even got both positions. If not, we can't (and won't) swap
 		if (aIter == pageOrder.end() || bIter == pageOrder.end())
@@ -125,20 +128,21 @@ bool handleLine(const std::string& line)
 	}
 
 	// Then convert the update to a list of pages
+	std::vector<uint32_t> updatePages;
 	auto regBeg = std::sregex_iterator(line.cbegin(), line.cend(), UPDATE_REGEX);
 	auto regEnd = std::sregex_iterator();
 	uint32_t pageCount = std::distance(regBeg, regEnd);
-	std::vector<uint32_t> updatePages{};
+
 	updatePages.reserve(pageCount);
 	for (auto iter = regBeg ; iter != regEnd ; iter++)
 	{
 		updatePages.emplace_back(strToInt<uint32_t>((*iter)[1]));
 	}
 
-	// Then check if the update is correct
 #ifndef PART_1
-	bool bIsValid = false;
+	bool bInWrongOrder = false;
 #endif
+	// Then check if the update is correct/incorrect
 	for (uint32_t page : updatePages)
 	{
 		const auto iter = s_pageToRulesMap.find(page);
@@ -149,26 +153,20 @@ bool handleLine(const std::string& line)
 		{
 			if (!rule->update(page))
 			{
-#ifndef PART_1
-				if (!bIsValid)
-#endif
-				std::cout << "Rule doesn't apply for update \"" << line << "\"!" << std::endl;
 #ifdef PART_1
 				return true; // Kick out rules that DON'T apply
 #else
-				bIsValid = true;
+				bInWrongOrder = true;
 #endif
 			}
 		}
 	}
 
 #ifndef PART_1
-	if (!bIsValid)
+	if (!bInWrongOrder)
 	{
 		return true;
 	}
-
-	std::cout << "SANITY!" << std::endl;
 
 	// Now let the update get fixed by all rules that take part in the update.
 	// Do that by first creating a vector with all rules and then checking against them
@@ -178,22 +176,17 @@ bool handleLine(const std::string& line)
 		auto iter = s_pageToRulesMap.find(page);
 		if (iter == s_pageToRulesMap.end())
 			continue;
-		
 		appliedRules.insert(appliedRules.end(), iter->second.begin(), iter->second.end());
 	}
 
-	// Now let the rules fix the update
-	for (const auto* pageOrderRule : appliedRules)
+	// Now let the rules fix the update (by basically doing bubblesort)
+	for (uint32_t offset = 0 ; offset < pageCount ; offset++)
 	{
-		pageOrderRule->fix(updatePages);
+		for (const auto* pageOrderRule : appliedRules)
+		{
+			pageOrderRule->fix(updatePages, offset);
+		}
 	}
-
-	std::cout << "The fixed rule reads: \"";
-	for (uint32_t x : updatePages)
-	{
-		std::cout << x << ',';
-	}
-	std::cout << '"' << std::endl;
 #endif
 
 	// If we get here, the update is fine. So get
