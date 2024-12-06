@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <cstdint>
 
 // Why are they different? One year later, I know why: Because one's in the C++-standard and the other one isn't!
 // Hint: the latter one is in the standard
