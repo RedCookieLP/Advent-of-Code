@@ -31,11 +31,10 @@ target_compile_definitions(
 target_compile_options(puzzleBase INTERFACE -Wall -Wextra)
 
 # Add all the subdirectories as targets
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Day1)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Day2)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Day3)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Day4)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Day5)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Day6)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Day7)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/Day8)
+list(APPEND DAYS
+	Day1 Day2 Day3 Day4 Day5 Day6
+	Day7 Day8 Day9 
+)
+foreach(day IN LISTS DAYS)
+	add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/${day})
+endforeach()
