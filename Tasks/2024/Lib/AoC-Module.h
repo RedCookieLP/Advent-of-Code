@@ -4,7 +4,6 @@
 
 // Why are they different? One year later, I know why: Because one's in the C++-standard and the other one isn't!
 // Hint: the latter one is in the standard
-#define UNUSED			__attribute__((unused))
 #define MAYBE_UNUSED	[[maybe_unused]]
 
 /** @name initialize
@@ -12,7 +11,14 @@
  *  @param lineCount: number of lines the input file has
  *  @return `void`
 */
-void initialize(uint64_t lineCount);
+#ifdef _MSC_FULL_VER
+// All hail the coorporation with greatest monetary value... this is stupid AF
+extern "C" void __cdecl
+#	pragma comment(linker, "/ALTERNATENAME:initialize=no_initialize")
+#else
+void
+#endif
+initialize(uint64_t lineCount);
 
 /** @name handleLine
  * 	@brief parser-function called for every line of the input file

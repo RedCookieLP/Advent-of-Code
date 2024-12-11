@@ -1,33 +1,8 @@
 #include <AoC-Module.h>
 #include <unordered_set>
+#include <Position2D.hpp>
 
-struct Position
-{
-	Position(uint32_t x, uint32_t y)
-		: x{x}, y{y}
-	{}
-	inline Position operator+(const Position& other) const noexcept
-	{
-		return Position{x + other.x, y + other.y};
-	}
-	inline bool operator==(const Position& other) const noexcept
-	{
-		return (x == other.x && y == other.y);
-	}
-
-	uint32_t x;
-	uint32_t y;
-};
-template<>
-struct std::hash<Position>
-{
-	size_t operator()(const Position& pos) const noexcept
-	{
-		static_assert(sizeof(size_t) == 8ull, "Must be a 64-bit platform!");
-		size_t val = ((static_cast<size_t>(pos.x) << 32ull) | static_cast<size_t>(pos.y));
-		return std::hash<size_t>{}(val);
-	}
-};
+using Position = Position2D<uint32_t>;
 
 const static Position NORTH_WEST{ -1u, -1u };
 const static Position WEST{ -1u, 0u };
@@ -124,8 +99,8 @@ void finalize()
 inline static bool hasXMASAtPositionInDirection(Position startPos, Position direction)
 {
 	// Make sure we don't underflow for negative-component directions
-	if ((direction.x == -1u && startPos.x < 3u) ||
-		(direction.y == -1u && startPos.y < 3u)
+	if ((direction.x() == -1u && startPos.x() < 3u) ||
+		(direction.y() == -1u && startPos.y() < 3u)
 	)
 	{
 		return false;
@@ -147,7 +122,7 @@ inline static bool hasXMASAtPositionInDirection(Position startPos, Position dire
 inline static bool hasXMASAtPosition(Position startPos)
 {
 	// Can't get this stuff at the left and top edge with my struct... wouldn't be possible anyway
-	if (startPos.x == 0u || startPos.y == 0u || !containsPos(s_APositions, startPos))
+	if (startPos.x() == 0u || startPos.y() == 0u || !containsPos(s_APositions, startPos))
 		return false;
 	
 	Position posNW = startPos + NORTH_WEST;

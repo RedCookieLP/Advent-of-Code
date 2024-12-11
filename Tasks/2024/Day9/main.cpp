@@ -1,6 +1,7 @@
 #include <AoC-Module.h>
 #include <vector>
 #include <unordered_set>
+#include <algorithm>
 
 #ifndef PART_1
 constexpr static uint32_t EMPTY_ID = -1u;

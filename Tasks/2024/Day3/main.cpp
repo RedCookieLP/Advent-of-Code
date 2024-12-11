@@ -1,5 +1,6 @@
 #include <AoC-Module.h>
 #include <regex>
+#include <sstream>
 
 #ifdef PART_1
 static const std::regex sc_mulRegex{ R"(mul\((\d{1,3}),(\d{1,3})\))" };
@@ -31,13 +32,8 @@ bool handleLine(const std::string& line)
 		}
 #endif
 		uint32_t a, b;
-		std::stringstream ss{};
-		ss << strMatch[1].str();
-		ss >> a;
-		ss.clear();
-		ss << strMatch[2].str();
-		ss >> b;
-
+		{std::stringstream{} << strMatch[1] >> a;}
+		{std::stringstream{} << strMatch[2] >> b;}
 		s_result += (a * b);
 	}
 	return true;

@@ -2,6 +2,7 @@
 #include <vector>
 #include <regex>
 #include <iostream>
+#include <sstream>
 
 static std::vector<uint32_t> lineToEntries(const std::string& line)
 {
@@ -10,7 +11,7 @@ static std::vector<uint32_t> lineToEntries(const std::string& line)
 
 	std::vector<uint32_t> vec{};
 	std::smatch strMatches;
-	while (str != "" && std::regex_search(str, strMatches, lineRegex))
+	while (std::regex_search(str, strMatches, lineRegex))
 	{
 		uint32_t temp;
 		{std::stringstream{} << strMatches[1u] >> temp;}

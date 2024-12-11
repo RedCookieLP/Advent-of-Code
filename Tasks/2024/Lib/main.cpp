@@ -6,32 +6,25 @@
 #include <AoC-Module.h>
 
 // In case we don't need or want this function, use this as a fallback
-void __attribute__((weak)) initialize([[maybe_unused]] uint64_t lineCount) {}
+#ifdef _MSC_FULL_VER
+extern "C" void __cdecl no_initialize(MAYBE_UNUSED uint64_t lineCount) {}
+#else
+void __attribute__((weak)) initialize(MAYBE_UNUSED uint64_t lineCount) {}
+#endif
 
 int main(int argc, const char** argv)
 {
-	std::string exeDir = argv[0];
-	size_t lastSlashPos = exeDir.find_last_of("\\/");
-	exeDir = exeDir.substr(0, (lastSlashPos != std::string::npos ? lastSlashPos + 1 : lastSlashPos));
-	
+	const auto cwd = std::filesystem::current_path();
     std::string line;
-    std::string filePath;
+    std::string thisDay = std::filesystem::path{argv[0]}.filename().stem().string();
+	auto filePath = cwd / "Tasks" / "2024" / thisDay;
     if (argc > 1)
 	{
-		const std::string relPrefix("rel:");
-		std::string rawPath = argv[1];
-
-		// If the specified path starts with "rel:", treat the path as a path relative to the executables path
-		if (rawPath.substr(0, relPrefix.length()) == relPrefix)
-		{
-			filePath = exeDir;
-			rawPath = rawPath.substr(relPrefix.length());
-		}
-		filePath += rawPath;
+		filePath /= argv[1];
 	}
     else
 	{
-        filePath = "input.txt";
+        filePath /= "input.txt";
 	}
 
 	std::cout << "Using file \"" << filePath << "\"!" << std::endl;

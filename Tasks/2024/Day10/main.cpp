@@ -3,57 +3,9 @@
 #include <unordered_set>
 #include <vector>
 #include <sstream>
+#include <Vector2.hpp>
 
-struct Position
-{
-	Position()
-		: x{0}, y{0}
-	{}
-	Position(uint32_t x, uint32_t y)
-		: x{x}, y{y}
-	{}
-	inline bool operator==(const Position& other) const noexcept
-	{
-		return (x == other.x && y == other.y);
-	}
-	inline Position operator+(const Position& other) const noexcept
-	{
-		return Position{x + other.x, y + other.y};
-	}
-	inline Position& operator+=(const Position& other) noexcept
-	{
-		x += other.x;
-		y += other.y;
-		return *this;
-	}
-	inline Position operator-(const Position& other) const noexcept
-	{
-		return Position{x - other.x, y - other.y};
-	}
-	inline bool operator>(const Position& other) const noexcept
-	{
-		// Positions are ordered first by y, then by x
-		return ((y > other.y) || (y == other.y && x > other.x));
-	}
-	inline bool operator<(const Position& other) const noexcept
-	{
-		return !((*this == other) || (*this > other));
-	}
-	inline Position operator-() const noexcept
-	{
-		return {-x, -y};
-	}
-	uint32_t x;
-	uint32_t y;
-};
-template <>
-struct std::hash<Position>
-{
-	inline size_t operator()(const Position& obj) const noexcept
-	{
-		return std::hash<uint64_t>{}((static_cast<uint64_t>(obj.x) << 32ull) | static_cast<uint64_t>(obj.y));
-	}
-};
+using Position = Vector2u32;
 
 // Stores all positions of a specific height
 static std::array<std::unordered_set<Position>, 10u> s_heightMap;
@@ -78,8 +30,8 @@ bool handleLine(const std::string& line)
 	if (line.empty())
 		return true;
 	
-	if (s_area.x == 0u)
-		s_area.x = line.length();
+	if (s_area.x() == 0u)
+		s_area.x() = line.length();
 	
 	static uint32_t yPos{0u};
 	
@@ -90,7 +42,7 @@ bool handleLine(const std::string& line)
 	}
 
 	yPos++;
-	s_area.y = yPos;
+	s_area.y() = yPos;
 	return true;
 }
 

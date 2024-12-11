@@ -3,43 +3,9 @@
 #include <vector>
 #include <sstream>
 #include <unordered_set>
+#include <Vector2.hpp>
 
-struct Position
-{
-	Position()
-		: x{0}, y{0}
-	{}
-	Position(uint32_t x, uint32_t y)
-		: x{x}, y{y}
-	{}
-	inline bool operator==(const Position& other) const noexcept
-	{
-		return (x == other.x && y == other.y);
-	}
-	inline Position operator+(const Position& other) const noexcept
-	{
-		return Position{x + other.x, y + other.y};
-	}
-	inline bool operator>(const Position& other) const noexcept
-	{
-		// Positions are ordered first by y, then by x
-		return ((y > other.y) || (y == other.y && x > other.x));
-	}
-	inline bool operator<(const Position& other) const noexcept
-	{
-		return !((*this == other) || (*this > other));
-	}
-	uint32_t x;
-	uint32_t y;
-};
-template <>
-struct std::hash<Position>
-{
-	inline size_t operator()(const Position& obj) const noexcept
-	{
-		return std::hash<uint64_t>{}((static_cast<uint64_t>(obj.x) << 32ull) | static_cast<uint64_t>(obj.y));
-	}
-};
+using Position = Vector2u32;
 
 using Direction = uint8_t;
 struct GuardTile
@@ -98,8 +64,8 @@ bool handleLine(const std::string& line)
 	if (line == "")
 		return true;
 	
-	if (s_area.x == 0u)
-		s_area.x = line.length();
+	if (s_area.x() == 0u)
+		s_area.x() = line.length();
 	
 	static uint32_t lineIndex{0u};
 	for (size_t charPos = line.find_first_of("#^") ; charPos != line.npos ; charPos = line.find_first_of("#^", charPos+1u))
@@ -111,7 +77,7 @@ bool handleLine(const std::string& line)
 		else
 			s_guard = GuardTile{pos, 0};
 	}
-	s_area.y = ++lineIndex;
+	s_area.y() = ++lineIndex;
 	return true;
 }
 
@@ -120,7 +86,7 @@ void finalize()
 	std::vector<GuardTile> guardPath{};
 #ifdef PART_1
 	uint32_t fields = patrolArea(s_area, s_guard, s_obstaclePositions, guardPath);
-	std::cout << "The guard currently patrols " << fields << " unique fields in the [" << s_area.x << 'x' << s_area.y << "] area!" << std::endl;
+	std::cout << "The guard currently patrols " << fields << " unique fields in the [" << s_area.x() << 'x' << s_area.y() << "] area!" << std::endl;
 #else
 	// First, get the regular path of the guard. We can only intercept him
 	// on this path, since he wouldn't run into our crate otherwise
@@ -144,7 +110,7 @@ void finalize()
 		}
 
 		// Then check if the crate is at the guard's position **OR** if it's out of bounds
-		if (cratePos == s_guard.pos || cratePos.x > s_area.x || cratePos.y > s_area.y)
+		if (cratePos == s_guard.pos || cratePos.x() > s_area.x() || cratePos.y() > s_area.y())
 		{
 			continue;
 		}
@@ -175,7 +141,7 @@ static uint32_t patrolArea(const Position& area, GuardTile guard, const std::uno
 {
 	std::unordered_map<Position, Direction> pathHistory{};
 	size_t fieldCount = 0ull;
-	for ( ; guard.pos.x < area.x && guard.pos.y < area.y ; guard.pos = (guard.pos + DIRECTIONS[guard.dir]))
+	for ( ; guard.pos.x() < area.x() && guard.pos.y() < area.y() ; guard.pos += DIRECTIONS[guard.dir])
 	{
 		guardPath.push_back(guard);
 		// 1. Check if our current position is unique
