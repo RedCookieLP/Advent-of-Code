@@ -8,7 +8,7 @@ target_include_directories(puzzleBase PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_sources(
 	puzzleBase
 	PRIVATE
-		main.cpp
+		libmain.cpp
 	PUBLIC
 		AoC-Module.h
 		HashHelper.hpp

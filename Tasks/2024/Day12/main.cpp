@@ -4,52 +4,36 @@
 #include <unordered_set>
 #include <vector>
 #include <array>
+#include <stack>
 
 using Position = Vector2u32;
 
 struct Region
 {
-public:
-	Region() = default;
-	~Region() = default;
-public:
-	bool isNeighbouring(const Position& plotPos) const noexcept;
-	void addPlot(const Position& plotPos) noexcept;
-public:
-	inline uint64_t getPerimeter() const noexcept
-	{
-		return m_perimeter;
-	}
-	inline uint64_t getArea() const noexcept
-	{
-		return m_plots.size();
-	}
-	bool merge(const Region& other) noexcept;
-private:
-	uint8_t getNeighbourArrangement(const Position& plotPos) const noexcept;
-	inline uint32_t getNumberOfNeighbours(const Position& plotPos) const noexcept
-	{
-		uint8_t arrangement = getNeighbourArrangement(plotPos);
-		uint32_t count = 0u;
-		for (uint8_t bit = 0x01u ; bit < 0x10u ; bit <<= 1u)
-		{
-			count += ((arrangement & bit) != 0u);
-		}
-		return count;
-	}
-private:
-	std::unordered_set<Position> m_plots{};
-	uint64_t m_perimeter{0ull};
+	std::unordered_set<Position> plots{};
+#ifdef PART_1
+	uint64_t perimeter{0ull};
+#else
+	uint64_t uniqueSides{0ull};
+#endif
 };
 
-static std::unordered_map<char, std::vector<Position>> s_plots;
+static std::unordered_map<char, std::unordered_set<Position>> s_plots;
 static const std::array<Position, 4u> DIRECTIONS =
 {
-	Position{0u,-1u},	// North
-	Position{1u,0u},	// East
-	Position{0u,1u},	// South
-	Position{-1u,0u}	// West
+	Position{0u,-1u},	// North = bit 0
+	Position{1u,0u},	// East = bit 1
+	Position{0u,1u},	// South = bit 2
+	Position{-1u,0u}	// West = bit 3
 };
+
+static void extractRegion(std::vector<Region>& regions, std::unordered_set<Position> plots) noexcept;
+static Region floodFillExtract(const Position& startPos, std::unordered_set<Position>& plots) noexcept;
+#ifdef PART_1
+static uint64_t calculatePerimeter(const Region& region) noexcept;
+#else
+static uint64_t calculateUniqueSides(const Region& region) noexcept;
+#endif
 
 bool handleLine(const std::string& line)
 {
@@ -59,7 +43,7 @@ bool handleLine(const std::string& line)
 	static uint32_t yPos{0u};
 	for (uint32_t xPos = 0u ; xPos < line.length() ; xPos++)
 	{
-		s_plots[line[xPos]].emplace_back(xPos, yPos);
+		s_plots[line[xPos]].emplace(xPos, yPos);
 	}
 	yPos++;
 	return true;
@@ -67,167 +51,188 @@ bool handleLine(const std::string& line)
 
 void finalize()
 {
-	// First build the areas from the top down
-	std::unordered_map<char, std::vector<Region>> regions;
-	for (const auto& [type, plotPosVec] : s_plots)
-	{
-		std::vector<Region>& regionVec = regions[type];
-		for (const auto& plotPos : plotPosVec)
-		{
-			if (!regionVec.empty())
-			{
-				// Ho-ho-holy moly...
-				bool foundRegion = false;
-				for (Region& region : regionVec)
-				{
-					if (region.isNeighbouring(plotPos))
-					{
-						foundRegion = true;
-						region.addPlot(plotPos);
-						break;
-					}
-				}
-				if (foundRegion)
-				{
-					continue;
-				}
-			}
-			regionVec.emplace_back().addPlot(plotPos);
-		}
-	}
-
-	// Then merge all neighbouring regions of the same type
-	for (auto& [type, regionVec] : regions)
-	{
-		for (auto regIter = regionVec.begin() ; regIter != regionVec.end() ; regIter++)
-		{
-			for (auto nextIter = regIter+1u ; nextIter != regionVec.end() ; )
-			{
-				if (regIter->merge(*nextIter))
-				{
-					nextIter = regionVec.erase(nextIter);
-				}
-				else
-				{
-					nextIter++;
-				}
-			}
-		}
-	}
-
 	uint64_t cost = 0u;
-	for (const auto& [type, regionVec] : regions)
+	// First build the areas from the top down
+	for (const auto& [type, plotPosSet] : s_plots)
 	{
-		size_t regions = regionVec.size();
-		std::cout << "Found " << regions << " regions of type " << type << std::endl;
-		for (const Region& reg : regionVec)
+		std::vector<Region> regionVec{};
+		extractRegion(regionVec, plotPosSet);
+		for (const Region& region : regionVec)
 		{
-			uint64_t price = reg.getArea() * reg.getPerimeter();
-			std::cout << "\t> Aera: " << reg.getArea() << " | Perimeter: " << reg.getPerimeter() << " >>> Price: " << price << std::endl;
-			cost += price;
-		}
-	}
-	std::cout << "The cost for all fences is " << cost << std::endl;
-}
-
-
-
-uint8_t Region::getNeighbourArrangement(const Position& plotPos) const noexcept
-{
-	// The arrangement indicates if a plot has a neighbour in a direction like so:
-	//  > arrangement: 0 0 0 0 W S E N
-	// Where each bit denotes if there's a neighbour in that direction
-	uint8_t arrangement = 0u;
-	for (uint8_t i = 0u ; i < 4u ; i++)
-	{
-		if (m_plots.find(plotPos + DIRECTIONS[i]) != m_plots.end())
-			arrangement |= (1u << i);
-	}
-	return arrangement;
-}
-
-bool Region::isNeighbouring(const Position& plotPos) const noexcept
-{
-	// Plots that are already contained, are not neighbouring...
-	if (m_plots.find(plotPos) != m_plots.end())
-		return false;
-	
-	// Now check if we've got at least one neighbour
-	return (getNumberOfNeighbours(plotPos) > 0u);
-}
-
-void Region::addPlot(const Position& plotPos) noexcept
-{
-	m_plots.insert(plotPos);
-	// If this is the first plot, set the perimeter to 4u
-	if (m_plots.size() == 1u)
-	{
-		m_perimeter = 4u;
-		return;
-	}
-
-	// Get the number of neighbours to this tile
-	uint32_t neighbours = getNeighbourArrangement(plotPos);
-
-	// Now manipulate the perimeter in a *special way*
-	switch (neighbours)
-	{
-	case 0b1000:
-	case 0b0100:
-	case 0b0010:
-	case 0b0001:
-		m_perimeter += 2u;
-		break;
-	case 0b1110:
-	case 0b1101:
-	case 0b1011:
-	case 0b0111:
-	case 0b1010:
-	case 0b0101:
-		m_perimeter -= 2u;
-		break;
-	case 0b1111:
-		m_perimeter -= 4u;
-		break;
-	case 0b0000:
-		m_perimeter += 4u; // Just in case...
-	default: // There's nothing to do for the rest
-		break;
-	}
-}
-
-bool Region::merge(const Region& other) noexcept
-{
-#ifndef SMART
-	bool mergeable = false;
-
-	const Region *greater, *smaller;
-	if (m_plots.size() < other.m_plots.size())
-	{
-		greater = &other;
-		smaller = this;
-	}
-	else
-	{
-		greater = this;
-		smaller = &other;
-	}
-
-	for (const Position& otherPos : smaller->m_plots)
-	{
-		if (greater->isNeighbouring(otherPos))
-		{
-			mergeable = true;
-			break;
-		}
-	}
-
-	if (!mergeable)
-		return false;
-	
-	for (const Position& otherPos : other.m_plots)
-		addPlot(otherPos);
-	return true;
+#ifdef PART_1
+			std::cout << "Region for '" << type << "' with perimeter " << region.perimeter << " and area " << region.plots.size() << std::endl;
+			cost += (region.perimeter * region.plots.size());
 #else
+			//	std::cout << "Region for '" << type << "' with unique-sides " << region.uniqueSides << " and area " << region.plots.size() << std::endl;
+			cost += (region.uniqueSides * region.plots.size());
 #endif
+		}
+	}
+	std::cout << "The total cost for all fences is " << cost << std::endl;
 }
+
+static void extractRegion(std::vector<Region>& regions, std::unordered_set<Position> plots) noexcept
+{
+	// To extract each region, do the following
+	// - start with the first position in the set
+	// - do a flood-fill until there's nothing else to find
+	// - add all the plots flooded by the flood-fill to a new region
+	// and repeat until all plots had been flooded
+
+	while (!plots.empty())
+	{
+		// start with the first position
+		Position startPos = *plots.begin();
+
+		// do a flood-fill until there's nothing else to find
+		Region newRegion = floodFillExtract(startPos, plots);
+#ifdef PART_1
+		newRegion.perimeter = calculatePerimeter(newRegion);
+#else
+		newRegion.uniqueSides = calculateUniqueSides(newRegion);
+#endif
+		regions.emplace_back(std::move(newRegion));
+	}
+}
+
+static Region floodFillExtract(const Position& startPos, std::unordered_set<Position>& plots) noexcept
+{
+	Region newRegion{};
+	std::stack<Position> stack{};
+	stack.push(startPos);
+	while (!stack.empty())
+	{
+		Position pos = stack.top();
+		stack.pop();
+		if (plots.find(pos) == plots.end())
+			continue;
+		plots.erase(pos);
+		if (newRegion.plots.find(pos) != newRegion.plots.end())
+			continue;
+		newRegion.plots.insert(pos);
+		for (uint8_t i = 0 ; i < 4 ; i++)
+			stack.push(pos + DIRECTIONS[i]);
+	}
+	return newRegion;
+}
+
+#ifdef PART_1
+static uint64_t calculatePerimeter(const Region& region) noexcept
+{
+	uint64_t perimeter = 0ull;
+	for (const Position& pos : region.plots)
+	{
+		for (uint8_t i = 0u ; i < 4u ; i++)
+			perimeter += (region.plots.find(pos + DIRECTIONS[i]) == region.plots.end());
+	}
+	return perimeter;
+}
+#else
+static uint64_t calculateUniqueSides(const Region& region) noexcept
+{
+	// SPOILER: This is messy, but fast! (got the solution in 0.037ms on my machine with input.txt)
+
+	// First determine all fence-locations
+	// (Also determine the area the region takes up, helps with limiting to the minimum)
+	Position cornerTL{-1u,-1u};
+	Position cornerBR{0u,0u};
+
+	std::unordered_map<Position, uint8_t/*fence-mask*/> fences;
+	for (const Position& pos : region.plots)
+	{
+		// Home in on the size of the area, for less iterations later on
+		if (pos.x() < cornerTL.x())
+			cornerTL.x() = pos.x();
+		if (pos.y() < cornerTL.y())
+			cornerTL.y() = pos.y();
+		if (pos.x() > cornerBR.x())
+			cornerBR.x() = pos.x();
+		if (pos.y() > cornerBR.y())
+			cornerBR.y() = pos.y();
+		
+		// Add all the fence-configurations of this region to the "fences"-map
+		// Encode the fence-configuration as a bit-mask with the values set like: 0b0000WSEN
+		for (const Position& pos : region.plots)
+		{
+			for (uint8_t i = 0u ; i < 4u ; i++)
+			{
+				// A side without a fence is useless to us, so skip it
+				if (region.plots.find(pos + DIRECTIONS[i]) != region.plots.end())
+					continue;
+				fences[pos] |= (1u << i);
+			}
+		}
+	}
+
+	// These are the bits for the fence configuration to tell if a position has a fence in a specific orientation
+	constexpr uint8_t NORTH_BIT = 0b0001u;
+	constexpr uint8_t EAST_BIT  = 0b0010u;
+	constexpr uint8_t SOUTH_BIT = 0b0100u;
+	constexpr uint8_t WEST_BIT  = 0b1000u;
+
+	// Now try to find as many segments as possible.
+	// We do this by first by iterating left to right and counting how many beningings for a segment we got
+	uint64_t sidesCount{0ull};
+	for (uint32_t y = cornerTL.y() ; y <= cornerBR.y() ; y++)
+	{
+		uint64_t northSegments = 0u;
+		uint64_t southSegments = 0u;
+		bool hadPreviousNorth = false;
+		bool hadPreviousSouth = false;
+		for (uint32_t x = cornerTL.x() ; x <= cornerBR.x() ; x++)
+		{
+			Position pos{x,y};
+			if (fences.find(pos) == fences.end())
+			{
+				hadPreviousNorth = false;
+				hadPreviousSouth = false;
+				continue;
+			}
+			
+			uint8_t fenceMask = fences[pos];
+			bool hasNorth = ((fenceMask & NORTH_BIT) != 0u);
+			bool hasSouth = ((fenceMask & SOUTH_BIT) != 0u);
+			if (!hadPreviousNorth && hasNorth)
+				northSegments++;
+			if (!hadPreviousSouth && hasSouth)
+				southSegments++;
+			hadPreviousNorth = hasNorth;
+			hadPreviousSouth = hasSouth;
+		}
+		sidesCount += northSegments + southSegments;
+	}
+
+	// Then repeat, but this time from the top downwards
+	for (uint32_t x = cornerTL.x() ; x <= cornerBR.x() ; x++)
+	{
+		uint64_t eastSegments = 0u;
+		uint64_t westSegments = 0u;
+		bool hadPreviousEast = false;
+		bool hadPreviousWest = false;
+		for (uint32_t y = cornerTL.y() ; y <= cornerBR.y() ; y++)
+		{
+			Position pos{x,y};
+			if (fences.find(pos) == fences.end())
+			{
+				hadPreviousEast = false;
+				hadPreviousWest = false;
+				continue;
+			}
+			
+			uint8_t fenceMask = fences[pos];
+			bool hasEast = ((fenceMask & EAST_BIT) != 0u);
+			bool hasWest = ((fenceMask & WEST_BIT) != 0u);
+			if (!hadPreviousEast && hasEast)
+				eastSegments++;
+			if (!hadPreviousWest && hasWest)
+				westSegments++;
+			hadPreviousEast = hasEast;
+			hadPreviousWest = hasWest;
+		}
+		sidesCount += eastSegments + westSegments;
+	}
+
+	// Finally, return the amount
+	return sidesCount;
+}
+#endif
