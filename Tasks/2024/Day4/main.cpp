@@ -1,8 +1,8 @@
 #include <AoC-Module.h>
 #include <unordered_set>
-#include <Position2D.hpp>
+#include <Vector2.hpp>
 
-using Position = Position2D<uint32_t>;
+using Position = Vector2u32;
 
 const static Position NORTH_WEST{ -1u, -1u };
 const static Position WEST{ -1u, 0u };

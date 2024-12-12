@@ -1,6 +1,7 @@
 #include <AoC-Module.h>
 #include <unordered_set>
 #include <unordered_map>
+#include <vector>
 #include <Vector2.hpp>
 
 using Position = Vector2u32;

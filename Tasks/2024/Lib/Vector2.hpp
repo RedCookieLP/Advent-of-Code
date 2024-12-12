@@ -23,7 +23,7 @@ public:
 	inline Vector2(const std::pair<S,R>& numbers) noexcept
 		: m_x{static_cast<T>(numbers.first)}, m_y{static_cast<T>(numbers.second)}
 	{}
-	virtual ~Vector2() = default;
+	~Vector2() = default;
 	template <typename S>
 	inline Vector2(const Vector2<S>& other) noexcept
 		: m_x{static_cast<T>(other.m_x)}, m_y{static_cast<T>(other.m_y)}
@@ -143,9 +143,9 @@ public:
 	 * @return `true` if contained, `false` otherwise
 	 */
 	template <typename S>
-	inline bool contains(const Vector2D<S>& other) const noexcept
+	inline bool contains(const Vector2<S>& other) const noexcept
 	{
-		return (other >= Vector2D{} && other < *this);
+		return (other >= Vector2{} && other < *this);
 	}
 protected:
 	T m_x;
