@@ -104,6 +104,30 @@ public:
 	{
 		return {-m_x, -m_y};
 	}
+	template <typename S>
+	inline Vector2<T> operator*(S scalar) const noexcept
+	{
+		static_assert(std::is_arithmetic_v<S>, "scalar-type must be arithmetic!");
+		return Vector2<T>{m_x * scalar, m_y * scalar};
+	}
+	template <typename S>
+	inline Vector2<T>& operator*=(S scalar) noexcept
+	{
+		static_assert(std::is_arithmetic_v<S>, "scalar-type must be arithmetic!");
+		return (*this = (*this * scalar));
+	}
+	template <typename S>
+	inline Vector2<T> operator/(S scalar) const noexcept
+	{
+		static_assert(std::is_arithmetic_v<S>, "scalar-type must be arithmetic!");
+		return Vector2<T>{m_x / scalar, m_y / scalar};
+	}
+	template <typename S>
+	inline Vector2<T>& operator/=(S scalar) noexcept
+	{
+		static_assert(std::is_arithmetic_v<S>, "scalar-type must be arithmetic!");
+		return (*this = (*this / scalar));
+	}
 public:
 	// access methods
 	inline T x() const noexcept { return this->m_x; }
