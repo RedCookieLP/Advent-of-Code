@@ -169,7 +169,7 @@ public:
 	template <typename S>
 	inline bool contains(const Vector2<S>& other) const noexcept
 	{
-		return (other >= Vector2{} && other < *this);
+		return (other >= Vector2{} && other.m_x < m_x && other.m_y < m_y);
 	}
 protected:
 	T m_x;
