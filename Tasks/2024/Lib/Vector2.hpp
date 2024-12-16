@@ -158,7 +158,7 @@ public:
 	template <typename S = double>
 	inline S len() const noexcept
 	{
-		return static_cast<S>(std::sqrt<T>(this->len()));
+		return static_cast<S>(std::sqrt<T>(this->len2<S>()));
 	}
 	/**
 	 * @brief Returns whether this vector contains the vector `other` inside a square, spanning from [0,0] to (this).
