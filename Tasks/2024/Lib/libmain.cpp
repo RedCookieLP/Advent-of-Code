@@ -27,7 +27,7 @@ int main(int argc, const char** argv)
         filePath /= "input.txt";
 	}
 
-	std::cout << "Using file \"" << filePath << "\"!" << std::endl;
+	std::cout << "Using file " << filePath << '!' << std::endl;
     std::ifstream file(filePath);
 	if (!file)
 	{
@@ -49,6 +49,9 @@ int main(int argc, const char** argv)
     while (file)
     {
         std::getline(file, line);
+		// Remove CR from the line...
+		for (size_t charPos = line.find_first_of('\r') ; charPos != line.npos ; charPos = line.find_first_of('\r', charPos))
+			line.erase(charPos);
     	if (!handleLine(line))
         {
 			std::cout << " --- Early break! ---" << std::endl;
