@@ -36,7 +36,7 @@ static Position s_mazeSize{};
 static std::vector<std::string> s_rawMaze{};
 
 static std::unordered_map<Position, Node> constructMaze();
-static uint64_t getFastestPathsScore(const std::unordered_map<Position, Node>& maze);
+static uint64_t getFastestPathsScore(const std::unordered_map<Position, Node>& maze, std::vector<std::vector<Position>>& optimalPaths);
 
 void initialize(uint64_t lineCount)
 {
@@ -70,18 +70,28 @@ bool handleLine(const std::string& line)
 void finalize()
 {
 	std::unordered_map<Position, Node> maze = constructMaze();
-	std::cout << "Constructed the maze! It's structured like this:" << std::endl;
-	for (const auto& [pos, node] : maze)
+
+	std::vector<std::vector<Position>> optimalPaths{};
+	uint64_t bestScore = getFastestPathsScore(maze, optimalPaths);
+#ifdef PART_1
+	std::cout << "The best score the deer could achieve is " << bestScore << std::endl;
+#else
+	// To get all unique tiles, just walk each path and add the tiles to our tile-set
+	std::unordered_set<Position> tiles{};
+	for (const auto& path : optimalPaths)
 	{
-		std::cout << "\tNode at [" << pos.x() << ',' << pos.y() << "]: " << node.neighbourCount << " neighbour(s)" << std::endl;
-		for (uint8_t i = 0u ; i < node.neighbourCount ; i++)
+		for (auto startPos = path.begin(), nextPos = ++path.begin() ; nextPos != path.end() ; startPos++, nextPos++)
 		{
-			std::cout << "\t\tNeighbour at [" << node.neighbours[i].x() << ',' << node.neighbours[i].y() << ']' << std::endl;
+			// Now we must just walk from `startPos` to `nextPos`
+			Position dir = (*nextPos - *startPos);
+			dir = (dir / dir.len<int64_t>());
+			for (Position curPos = *startPos ; curPos != *nextPos ; curPos += dir)
+				tiles.insert(curPos);
+			tiles.insert(*nextPos);
 		}
 	}
-
-	uint64_t bestScore = getFastestPathsScore(maze);
-	std::cout << "The best score the deer could achieve is " << bestScore << std::endl;
+	std::cout << "The best score the deer could achieve is " << bestScore << " with " << tiles.size() << " tiles on all optimal paths!" << std::endl;
+#endif
 }
 
 static std::unordered_map<Position, Node> constructMaze()
@@ -197,15 +207,16 @@ struct std::hash<PosDir>
 };
 struct QueueEntry
 {
+	std::vector<Position> path;
 	PosDir posDir;
 	uint64_t cost;
 };
 
-static uint64_t getFastestPathsScore(const std::unordered_map<Position, Node>& maze)
+static uint64_t getFastestPathsScore(const std::unordered_map<Position, Node>& maze, std::vector<std::vector<Position>>& optimalPaths)
 {
 	// Solve this puzzle by using what seems like a modified version of Dijkstra (?... honestly, I've never used Dijkstra... successfully, that is)
 	std::queue<QueueEntry> priorityQueue{};
-	priorityQueue.push(QueueEntry{s_startPos, DIRECTIONS[1]/*facing east at the start*/, 0ull});
+	priorityQueue.push(QueueEntry{{s_startPos}, s_startPos, DIRECTIONS[1]/*facing east at the start*/, 0ull});
 
 	uint64_t lowestScore = std::numeric_limits<uint64_t>::max();
 	std::unordered_map<PosDir, uint64_t> visited{};
@@ -217,12 +228,19 @@ static uint64_t getFastestPathsScore(const std::unordered_map<Position, Node>& m
 		if (entry.posDir.pos == s_endPos)
 		{
 			if (entry.cost < lowestScore)
+			{
 				lowestScore = entry.cost;
+				optimalPaths.clear();
+			}
+			if (entry.cost == lowestScore)
+			{
+				optimalPaths.push_back(entry.path);
+			}
 			continue;
 		}
 
 		auto iter = visited.find(entry.posDir);
-		if (iter != visited.end() && iter->second <= entry.cost)
+		if (iter != visited.end() && iter->second < entry.cost)
 			continue;
 		visited.insert_or_assign(entry.posDir, entry.cost);
 
@@ -238,8 +256,11 @@ static uint64_t getFastestPathsScore(const std::unordered_map<Position, Node>& m
 			bool isTurn = (entry.posDir.dir != newDir);
 			uint64_t newCost = entry.cost + pathLength + (isTurn ? 1000 : 0);
 
-			//	std::cout << "At [" << entry.posDir.pos.x() << ',' << entry.posDir.pos.y() << "], checking in [" << newDir.x() << ',' << newDir.y() << "] with current cost at " << newCost << std::endl;
-			priorityQueue.push(QueueEntry{neighbourPos, newDir, newCost});
+			// Build the new path
+			std::vector<Position> newPath = entry.path;
+			newPath.push_back(neighbourPos);
+
+			priorityQueue.push(QueueEntry{newPath, neighbourPos, newDir, newCost});
 		}
 	}
 	// No way had been found...

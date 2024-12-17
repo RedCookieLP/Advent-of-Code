@@ -4,6 +4,7 @@
 #include <typeinfo>
 #include <utility>
 #include <cmath>
+#include <HashHelper.hpp>
 
 template <typename T>
 class Vector3
@@ -159,6 +160,21 @@ private:
 	T y;
 	T z;
 };
+
+template<typename T>
+struct std::hash<Vector3<T>>
+{
+	inline size_t operator()(const Vector3<T>& vec) const noexcept
+	{
+		return Hash::combine<T,T>(vec.x(), vec.y(), vec.z());
+	}
+};
+
+template<typename T>
+std::ostream& operator<<(std::ostream& ostream, const Vector3<T>& vec)
+{
+	return (ostream << '[' << vec.x() << ',' << vec.y() << ',' << vec.z() << ']');
+}
 
 // Specializations
 using Vector3d = Vector3<double>;

@@ -185,6 +185,12 @@ struct std::hash<Vector2<T>>
 	}
 };
 
+template<typename T>
+std::ostream& operator<<(std::ostream& ostream, const Vector2<T>& vec)
+{
+	return (ostream << '[' << vec.x() << ',' << vec.y() << ']');
+}
+
 // Specializations
 using Vector2d = Vector2<double>;
 using Vector2f = Vector2<float>;
