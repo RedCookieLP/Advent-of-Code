@@ -1,7 +1,7 @@
 #include <AoC-Module.h>
 #include <vector>
 #include <unordered_set>
-#include <set>
+#include <unordered_map>
 #include <HashHelper.hpp>
 #include <regex>
 #include <queue>
@@ -11,32 +11,10 @@
 #include <thread>
 #include <chrono>
 
-struct Towel
-{
-	inline bool operator==(const Towel& other) const noexcept
-	{
-		return (length == other.length && colors == other.colors);
-	}
-	inline bool operator>(const Towel& other) const noexcept
-	{
-		return length > other.length;
-	}
-	std::string colors;
-	uint32_t length;
-};
-template <>
-struct std::hash<Towel>
-{
-	inline size_t operator()(const Towel& towel) const noexcept
-	{
-		return Hash::combine(towel.colors, towel.length);
-	}
-};
-
-std::unordered_set<Towel> s_allTowels{};
+std::unordered_set<std::string> s_allTowels{};
 std::vector<std::string> s_designs{};
 
-static uint64_t getTowelCombinationCount(const std::string& design, const std::unordered_set<Towel>& towels);
+static uint64_t getPossibleDesignCombinations(const std::string& design, const std::unordered_set<std::string>& towels);
 
 void initialize(uint32_t lineCount)
 {
@@ -64,7 +42,7 @@ bool handleLine(const std::string& line)
 		for (std::string str = line ; std::regex_search(str, strMatch, TOWEL_REGEX) ; str = strMatch.suffix())
 		{
 			const std::string towelColors = strMatch[1].str();
-			s_allTowels.emplace(Towel{towelColors, static_cast<uint32_t>(towelColors.length())});
+			s_allTowels.emplace(towelColors);
 		}
 	}
 	return true;
@@ -76,90 +54,63 @@ void finalize()
 	uint64_t possibleDesignCount = 0u;
 	for (const std::string& design : s_designs)
 	{
-		std::cout << "Currently checking design \"" << design << "\"..." << std::endl;
-		possibleDesignCount += (getTowelCombinationCount(design, s_allTowels) > 0u);
+		possibleDesignCount += (getPossibleDesignCombinations(design, s_allTowels) > 0ull);
 	}
 	std::cout << "Of all " << s_designs.size()  << " design, exactly " << possibleDesignCount << " design(s) are possible!" << std::endl;
 #else
+	uint64_t designVariationCount = 0u;
+	for (const std::string& design : s_designs)
+	{
+		designVariationCount += getPossibleDesignCombinations(design, s_allTowels);
+	}
+	std::cout << "The total number of all possible towel variations is " << designVariationCount << std::endl;
 #endif
 }
 
-struct QueueEntry
+static std::unordered_map<std::string, uint64_t> s_cache{};
+static uint64_t recursivePossibilityTest(const std::string& design, const std::unordered_set<std::string>& towels, uint32_t minLen, uint32_t maxLen);
+static uint64_t getPossibleDesignCombinations(const std::string& design, const std::unordered_set<std::string>& towels)
 {
-	Towel towel{};
-	uint64_t position{0ull};
-};
+	uint32_t minLen = static_cast<uint32_t>(-1u);
+	uint32_t maxLen = 0u;
 
-static inline bool towelMatches(const std::string& str, const Towel& towel) noexcept
-{
-	size_t strLen = str.size();
-	size_t towelLen = towel.length;
-	return (strLen >= towelLen && std::memcmp(str.c_str(), towel.colors.c_str(), towelLen) == 0);
+	// First, determine the minimum and maximum length that a segment must be to be matched by a towel
+	for (const std::string& towel : towels)
+	{
+		uint32_t towelLen = towel.length();
+		if (towelLen > maxLen)
+			maxLen = towelLen;
+		if (towelLen < minLen)
+			minLen = towelLen;
+	}
+
+	// Then - using the min- and max-length - determine the number of distinct possible arrangements
+	return recursivePossibilityTest(design, towels, minLen, maxLen);
 }
-
-static uint64_t getTowelCombinationCount(const std::string& design, const std::unordered_set<Towel>& towels)
+static uint64_t recursivePossibilityTest(const std::string& design, const std::unordered_set<std::string>& towels, uint32_t minLen, uint32_t maxLen)
 {
-	// pre-filter the towels to only includes the ones who's letters are in the design.
-	std::multiset<Towel, std::greater<Towel>> filtered{};
-	for (const Towel& towel : towels)
+	// Check if we've got a solution in the cache
+	auto cacheIter = s_cache.find(design);
+	if (cacheIter != s_cache.end())
+		return cacheIter->second;
+	
+	// Then check if the design can even be matched by the towels.
+	// If not, return false...
+	size_t designLength = design.length();
+	if (designLength < minLen)
+		return design.empty(); // ...except when it's empty, then it matched 100%, so it's fine!
+	
+	uint32_t localMaxLen = std::min<uint32_t>(static_cast<uint32_t>(designLength), maxLen);
+	for (uint32_t len = minLen ; len <= localMaxLen ; len++)
 	{
-		//	std::cout << "Checking towel \"" << towel.colors << "\" for design \"" << design << "\"..." << std::endl;
-		if (towel.colors.find_first_of(design) == design.npos)
+		// Try to match every sub-design from minLen to maxLen to the towels
+		if (towels.find(design.substr(0,len)) == towels.end())
 			continue;
-		//	std::cout << " > Applicable" << std::endl;
-		filtered.insert(towel);
+		
+		// Accumulate the amount in the cache
+		s_cache[design] += recursivePossibilityTest(design.substr(len), towels, minLen, maxLen);
 	}
-
-	uint64_t furtestPosition = 0u;
-	uint64_t possibleCounter = 0u;
-	// Depth-first approach
-	std::stack<QueueEntry> towelQueue{};
-	for (const Towel& towel : filtered)
-	{
-		if (towelMatches(design, towel))
-			towelQueue.push(QueueEntry{towel, towel.length});
-	}
-
-	while (!towelQueue.empty())
-	{
-		auto entry = towelQueue.top();
-		towelQueue.pop();
-		//	std::this_thread::sleep_for(std::chrono::milliseconds(50u));
-		if (entry.position >= design.size())
-		{
-#ifdef PART_1
-			std::cout << std::endl;
-			return 1;
-#endif
-			possibleCounter++;
-			continue;
-		}
-
-		if (furtestPosition < entry.position)
-		{
-			furtestPosition = entry.position;
-		}
-
-		std::cout << "\x1B[2K\rCurrently checking here:   ";
-		for (uint64_t i = 0u ; i < entry.position ; i++)
-			std::cout << ' ';
-		if (entry.position < furtestPosition)
-			std::cout << '^' << std::flush;
-		for (uint64_t i = entry.position+1u ; i < furtestPosition ; i++)
-		{
-			std::cout << ' ';
-		}
-		std::cout << "\x1B[1;92m^\x1B[0m" << std::flush;
-
-		std::string subDesign = design.substr(entry.position);
-		for (const Towel& towel : filtered)
-		{
-			if (towelMatches(subDesign, towel))
-				towelQueue.push(QueueEntry{towel, entry.position + towel.length});
-		}
-	}
-
-	std::cout << std::endl;
-
-	return possibleCounter;
+	// If we get here, then the total number of all distinct possibilities
+	// is stored in the cache, so return the value stored in the cache
+	return s_cache[design];
 }
