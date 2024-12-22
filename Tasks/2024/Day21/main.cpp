@@ -297,7 +297,7 @@ uint64_t KeyPad::moveToKey(char key) noexcept
 		// last direction to get us here, aka. the last char in the path, but better be safe than sorry)
 		char controllerLastKey = m_controller->m_currentKey;
 
-		// Now get the presses needed the controller from the last input to the 'A'-button (which could be many for some combinations)
+		// Now get the presses needed by the controller from the last input to the 'A'-button (which could be many for some combinations)
 		// UPDATE: This is the most... how'd I put it... "paranoid" approach, but somewhere here's a logic bug which I'm too stupid to find...
 		std::string temp{};
 		for (KeyPad* controller = this ; controller ; controller = controller->m_controller)
@@ -308,7 +308,7 @@ uint64_t KeyPad::moveToKey(char key) noexcept
 			controller->m_currentKey = temp[tempI++];
 		
 		// Now determine if this path is the one to use. Do that by adding up the steps needed
-		// to press all path-keys AND the steps needed to press the 'A'-button. If the sum
+		// to press all path-keys AND the steps needed to get to the 'A'-button. If the sum
 		// is smaller than our current best, then we've found something!
 		if ((currentScore + penaltyForMoveToA) < (bestScore + lowestPenaltyForMoveToA))
 		{
